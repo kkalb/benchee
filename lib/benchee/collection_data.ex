@@ -7,7 +7,9 @@ defmodule Benchee.CollectionData do
 
   alias Benchee.Statistics
 
-  defstruct statistics: %Statistics{}, samples: []
+  defstruct statistics: %Statistics{}, samples: [], org_samples: []
+
+  @typep samples :: [float | non_neg_integer]
 
   @typedoc """
   Samples and statistics.
@@ -15,7 +17,8 @@ defmodule Benchee.CollectionData do
   Statistics might only come later when they are computed.
   """
   @type t :: %__MODULE__{
-          samples: [float | non_neg_integer],
+          samples: samples,
+          org_samples: samples,
           statistics: Statistics.t()
         }
 end

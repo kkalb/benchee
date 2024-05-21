@@ -227,35 +227,60 @@ defmodule Benchee.Statistics do
   defp calculate_scenario_statistics(
          {run_time_data, memory_data, reductions_data},
          percentiles,
-         force_limit_samples
+         nil
        ) do
     run_time_stats =
       run_time_data.samples
-      |> may_reduce_samples(force_limit_samples)
       |> calculate_statistics(percentiles)
       |> add_ips
 
     memory_stats =
       memory_data.samples
-      |> may_reduce_samples(force_limit_samples)
       |> calculate_statistics(percentiles)
 
     reductions_stats =
       reductions_data.samples
-      |> may_reduce_samples(force_limit_samples)
       |> calculate_statistics(percentiles)
 
     {run_time_stats, memory_stats, reductions_stats}
   end
 
-  defp may_reduce_samples(samples, nil), do: samples
+  defp calculate_scenario_statistics(
+         {run_time_data, memory_data, reductions_data},
+         percentiles,
+         max_samples
+       ) do
+    run_time_data = reduce_samples(run_time_data, max_samples)
 
-  defp may_reduce_samples(samples, max_samples) when length(samples) > max_samples do
-      # if this is not fast enough, we can write a better solution or simply use Enum.take/2
-      Enum.take_random(samples, max_samples)
+    run_time_stats =
+      run_time_data.samples
+      |> calculate_statistics(percentiles)
+      |> add_ips
+
+    memory_stats =
+      memory_data.samples
+      |> calculate_statistics(percentiles)
+
+    reductions_stats =
+      reductions_data.samples
+      |> calculate_statistics(percentiles)
+
+    {run_time_stats, memory_stats, reductions_stats}
   end
 
-  defp may_reduce_samples(samples, _max_samples), do: samples
+  defp reduce_samples(run_time_data, max_samples) do
+    # if this is not fast enough, we can write a better solution or simply use Enum.take/2
+    if run_time_data.samples > max_samples do
+      run_time_data = %CollectionData{run_time_data | org_samples: run_time_data.samples}
+
+      %CollectionData{
+        run_time_data
+        | samples: Enum.take_random(run_time_data.samples, max_samples)
+      }
+    else
+      run_time_data
+    end
+  end
 
   defp calculate_statistics([], _) do
     %__MODULE__{

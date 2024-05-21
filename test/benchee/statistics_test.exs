@@ -12,7 +12,7 @@ defmodule Benchee.StatistcsTest do
   @sample_4 [100, 100, 100, 100]
   @sample_5 [5, 10, 15]
   @sample_6 [10, 20]
-  @sample_7 for x <- 1..100_001, do: x
+  @sample_7 for x <- 1..10_000, do: x
   describe ".statistics" do
     test "computes the statistics for all jobs correctly" do
       scenarios = [
@@ -84,11 +84,10 @@ defmodule Benchee.StatistcsTest do
 
       suite = %Suite{
         scenarios: scenarios,
-        configuration: %Benchee.Configuration{force_limit_samples: 100_000}
+        configuration: %Benchee.Configuration{force_limit_samples: 9_999}
       }
 
       new_suite = Statistics.statistics(suite, FakeProgressPrinter)
-
       stats_1 = run_time_stats_for(new_suite, "Job 1", "Input")
       stats_2 = run_time_stats_for(new_suite, "Job 2", "Input")
       stats_7 = run_time_stats_for(new_suite, "Job 3", "Input")
@@ -355,14 +354,15 @@ defmodule Benchee.StatistcsTest do
 
     # we can make this assertion more robust and explicit
     defp sample_7_asserts(stats) do
-      assert round(stats.average) >= 50_000.0
-      assert stats.std_dev > 28_000.0
-      assert stats.std_dev_ratio > 0.0
-      assert stats.median >= 50_000.0
-      assert stats.minimum == 1 or stats.minimum == 0
-      assert stats.maximum == 100_000 or stats.maximum == 100_001
-      assert stats.sample_size == 100_000
+      assert stats.average >= 5_000 and stats.average <= 5_001
+      assert stats.std_dev < 3_000.0
+      assert Float.round(stats.std_dev_ratio, 2) == 0.58
+      assert stats.median in [4_999.0, 5_000.0, 5_001.0]
+      assert stats.minimum <= 1
+      assert stats.maximum >= 4_999
+      assert stats.sample_size == 9999
       assert stats.mode == nil
+      assert stats.ips <= 200_000 and stats.ips >= 199_900
     end
   end
 end
