@@ -248,13 +248,14 @@ defmodule Benchee.Statistics do
     {run_time_stats, memory_stats, reductions_stats}
   end
 
-  defp may_reduce_samples(samples, false), do: samples
+  defp may_reduce_samples(samples, nil), do: samples
 
-  defp may_reduce_samples(samples, true) when length(samples) > 100_000 do
-      Enum.take_random(samples, 100_000)
+  defp may_reduce_samples(samples, max_samples) when length(samples) > max_samples do
+      # if this is not fast enough, we can write a better solution or simply use Enum.take/2
+      Enum.take_random(samples, max_samples)
   end
 
-  defp may_reduce_samples(samples, true), do: samples
+  defp may_reduce_samples(samples, _max_samples), do: samples
 
   defp calculate_statistics([], _) do
     %__MODULE__{

@@ -40,7 +40,7 @@ defmodule Benchee.Configuration do
             measure_function_call_overhead: false,
             title: nil,
             profile_after: false,
-            force_limit_samples: false
+            force_limit_samples: nil
 
   @typedoc """
   The configuration supplied by the user as either a map or a keyword list
@@ -134,6 +134,8 @@ defmodule Benchee.Configuration do
       [`:cprof`](https://hexdocs.pm/mix/Mix.Tasks.Profile.Cprof.html),
       [`:eprof`](https://hexdocs.pm/mix/Mix.Tasks.Profile.Eprof.html) and
       [`:fprof`](https://hexdocs.pm/mix/Mix.Tasks.Profile.Fprof.html).
+    * `force_limit_samples` - *Experimental*: accepts an non-negative integer or nil. If nil is used, all samples will be used. If an integer `n` is used, `n` random samples will be picked out of all samples.
+      Fixes the problem on large samples for long running functions and fast benchmarking functions. Defaults to nil.
   """
   @type user_configuration :: map | keyword
 
@@ -165,7 +167,7 @@ defmodule Benchee.Configuration do
           measure_function_call_overhead: boolean,
           title: String.t() | nil,
           profile_after: boolean | atom | {atom, keyword},
-          force_limit_samples: boolean
+          force_limit_samples: nil | non_neg_integer()
         }
 
   @time_keys [:time, :warmup, :memory_time, :reduction_time]

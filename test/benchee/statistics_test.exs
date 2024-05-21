@@ -84,7 +84,7 @@ defmodule Benchee.StatistcsTest do
 
       suite = %Suite{
         scenarios: scenarios,
-        configuration: %Benchee.Configuration{force_limit_samples: true}
+        configuration: %Benchee.Configuration{force_limit_samples: 100_000}
       }
 
       new_suite = Statistics.statistics(suite, FakeProgressPrinter)
