@@ -115,7 +115,7 @@ defmodule Benchee.Statistics do
       ...>     input: "Input"
       ...>   }
       ...> ]
-      ...>
+      ...> 
       ...> suite = %Benchee.Suite{scenarios: scenarios}
       ...> statistics(suite, Benchee.Test.FakeProgressPrinter)
       %Benchee.Suite{
@@ -271,8 +271,6 @@ defmodule Benchee.Statistics do
   defp reduce_samples(run_time_data, max_samples) do
     # if this is not fast enough, we can write a better solution or simply use Enum.take/2
     if run_time_data.samples > max_samples do
-      run_time_data = %CollectionData{run_time_data | org_samples: run_time_data.samples}
-
       %CollectionData{
         run_time_data
         | samples: Enum.take_random(run_time_data.samples, max_samples)
