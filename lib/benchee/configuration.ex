@@ -39,7 +39,8 @@ defmodule Benchee.Configuration do
             after_scenario: nil,
             measure_function_call_overhead: false,
             title: nil,
-            profile_after: false
+            profile_after: false,
+            force_limit_samples: false
 
   @typedoc """
   The configuration supplied by the user as either a map or a keyword list
@@ -163,7 +164,8 @@ defmodule Benchee.Configuration do
           after_scenario: Hooks.hook_function() | nil,
           measure_function_call_overhead: boolean,
           title: String.t() | nil,
-          profile_after: boolean | atom | {atom, keyword}
+          profile_after: boolean | atom | {atom, keyword},
+          force_limit_samples: boolean
         }
 
   @time_keys [:time, :warmup, :memory_time, :reduction_time]

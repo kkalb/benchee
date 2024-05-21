@@ -115,7 +115,7 @@ defmodule Benchee.Statistics do
       ...>     input: "Input"
       ...>   }
       ...> ]
-      ...> 
+      ...>
       ...> suite = %Benchee.Suite{scenarios: scenarios}
       ...> statistics(suite, Benchee.Test.FakeProgressPrinter)
       %Benchee.Suite{
@@ -169,13 +169,18 @@ defmodule Benchee.Statistics do
     percentiles = suite.configuration.percentiles
 
     update_in(suite.scenarios, fn scenarios ->
-      scenario_statistics = compute_statistics_in_parallel(scenarios, percentiles)
+      scenario_statistics =
+        compute_statistics_in_parallel(
+          scenarios,
+          percentiles,
+          suite.configuration.force_limit_samples
+        )
 
       update_scenarios_with_statistics(scenarios, scenario_statistics)
     end)
   end
 
-  defp compute_statistics_in_parallel(scenarios, percentiles) do
+  defp compute_statistics_in_parallel(scenarios, percentiles, force_limit_samples) do
     scenarios
     |> Enum.map(fn scenario ->
       # we filter down the data here to avoid sending the input and benchmarking function to
@@ -188,7 +193,7 @@ defmodule Benchee.Statistics do
     # async_stream as we might run a ton of scenarios depending on the benchmark
     |> Task.async_stream(
       fn scenario_collection_data ->
-        calculate_scenario_statistics(scenario_collection_data, percentiles)
+        calculate_scenario_statistics(scenario_collection_data, percentiles, force_limit_samples)
       end,
       timeout: :infinity,
       ordered: true
@@ -219,17 +224,37 @@ defmodule Benchee.Statistics do
     end)
   end
 
-  defp calculate_scenario_statistics({run_time_data, memory_data, reductions_data}, percentiles) do
+  defp calculate_scenario_statistics(
+         {run_time_data, memory_data, reductions_data},
+         percentiles,
+         force_limit_samples
+       ) do
     run_time_stats =
       run_time_data.samples
+      |> may_reduce_samples(force_limit_samples)
       |> calculate_statistics(percentiles)
       |> add_ips
 
-    memory_stats = calculate_statistics(memory_data.samples, percentiles)
-    reductions_stats = calculate_statistics(reductions_data.samples, percentiles)
+    memory_stats =
+      memory_data.samples
+      |> may_reduce_samples(force_limit_samples)
+      |> calculate_statistics(percentiles)
+
+    reductions_stats =
+      reductions_data.samples
+      |> may_reduce_samples(force_limit_samples)
+      |> calculate_statistics(percentiles)
 
     {run_time_stats, memory_stats, reductions_stats}
   end
+
+  defp may_reduce_samples(samples, false), do: samples
+
+  defp may_reduce_samples(samples, true) when length(samples) > 100_000 do
+      Enum.take_random(samples, 100_000)
+  end
+
+  defp may_reduce_samples(samples, true), do: samples
 
   defp calculate_statistics([], _) do
     %__MODULE__{

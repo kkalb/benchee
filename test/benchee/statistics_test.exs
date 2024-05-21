@@ -12,6 +12,7 @@ defmodule Benchee.StatistcsTest do
   @sample_4 [100, 100, 100, 100]
   @sample_5 [5, 10, 15]
   @sample_6 [10, 20]
+  @sample_7 for x <- 1..100_001, do: x
   describe ".statistics" do
     test "computes the statistics for all jobs correctly" do
       scenarios = [
@@ -51,6 +52,65 @@ defmodule Benchee.StatistcsTest do
       sample_4_asserts(stats_4)
       sample_5_asserts(stats_5)
       sample_6_asserts(stats_6)
+    end
+
+    test "computes the statistics for all jobs correctly with reduced samples" do
+      scenarios = [
+        %Scenario{
+          input: "Input",
+          input_name: "Input",
+          job_name: "Job 1",
+          run_time_data: %CollectionData{samples: @sample_1},
+          memory_usage_data: %CollectionData{samples: @sample_3},
+          reductions_data: %CollectionData{samples: @sample_5}
+        },
+        %Scenario{
+          input: "Input",
+          input_name: "Input",
+          job_name: "Job 2",
+          run_time_data: %CollectionData{samples: @sample_2},
+          memory_usage_data: %CollectionData{samples: @sample_4},
+          reductions_data: %CollectionData{samples: @sample_6}
+        },
+        %Scenario{
+          input: "Input",
+          input_name: "Input",
+          job_name: "Job 3",
+          run_time_data: %CollectionData{samples: @sample_7},
+          memory_usage_data: %CollectionData{samples: @sample_3},
+          reductions_data: %CollectionData{samples: @sample_5}
+        }
+      ]
+
+      suite = %Suite{
+        scenarios: scenarios,
+        configuration: %Benchee.Configuration{force_limit_samples: true}
+      }
+
+      new_suite = Statistics.statistics(suite, FakeProgressPrinter)
+
+      stats_1 = run_time_stats_for(new_suite, "Job 1", "Input")
+      stats_2 = run_time_stats_for(new_suite, "Job 2", "Input")
+      stats_7 = run_time_stats_for(new_suite, "Job 3", "Input")
+
+      stats_3 = stats_for(new_suite, "Job 1", "Input", :memory_usage_data)
+      stats_4 = stats_for(new_suite, "Job 2", "Input", :memory_usage_data)
+      stats_8 = stats_for(new_suite, "Job 3", "Input", :memory_usage_data)
+
+      stats_5 = stats_for(new_suite, "Job 1", "Input", :reductions_data)
+      stats_6 = stats_for(new_suite, "Job 2", "Input", :reductions_data)
+      stats_9 = stats_for(new_suite, "Job 3", "Input", :reductions_data)
+
+      sample_1_asserts(stats_1)
+      sample_2_asserts(stats_2)
+      sample_3_asserts(stats_3)
+      sample_4_asserts(stats_4)
+      sample_5_asserts(stats_5)
+      sample_6_asserts(stats_6)
+      # only 7 is new
+      sample_7_asserts(stats_7)
+      sample_3_asserts(stats_8)
+      sample_5_asserts(stats_9)
     end
 
     test "computes statistics correctly for multiple inputs" do
@@ -290,6 +350,18 @@ defmodule Benchee.StatistcsTest do
       assert stats.minimum == 10
       assert stats.maximum == 20
       assert stats.sample_size == 2
+      assert stats.mode == nil
+    end
+
+    # we can make this assertion more robust and explicit
+    defp sample_7_asserts(stats) do
+      assert round(stats.average) >= 50_000.0
+      assert stats.std_dev > 28_000.0
+      assert stats.std_dev_ratio > 0.0
+      assert stats.median >= 50_000.0
+      assert stats.minimum == 1 or stats.minimum == 0
+      assert stats.maximum == 100_000 or stats.maximum == 100_001
+      assert stats.sample_size == 100_000
       assert stats.mode == nil
     end
   end

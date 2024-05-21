@@ -30,3 +30,6 @@ save.benchee
 /test/tmp/
 /tools/plts/benchee.plt
 /tools/plts/benchee.plt.hash
+
+/.vscode/
+/.devcontainer/
